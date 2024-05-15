@@ -1,39 +1,69 @@
 import UIKit
 
+// вью модель для состояния "Вопрос показан"
+private struct QuizStepViewModel {
+    let image: UIImage // картинка с афишей фильма с типом UIImage
+    let question: String // вопрос о рейтинге квиза
+    let questionNumber: String // строка с порядковым номером этого вопроса (ex. "1/10")
+}
+
+private struct QuizQuestion {
+    // строка с названием фильма совпадает с названием картинки афиши фильма в Assets
+    let image: String   // строка с вопросом о рейтинге фильма
+    let text: String   // булевое значение (true, false), правильный ответ на вопрос
+    let correctAnswer: Bool
+}
+
+private struct QuizResultsViewModel {
+    let title: String
+    let text: String
+    let buttonText: String
+}
+
 final class MovieQuizViewController: UIViewController {
     override func viewDidLoad() {
         let currentQuestion = questions[currentQuestionIndex]
         show(quiz: convert(model: currentQuestion))
+        imageView.layer.cornerRadius = 20 // закруглил углы в соответствии с замечанием
         
         questionTitleLabel.font = UIFont(name: "YSDisplay-Medium", size: 20)
         counterLabel.font = UIFont(name: "YSDisplay-Medium", size: 20)
         textLabel.font = UIFont(name: "YSDisplay-Bold", size: 23)
         noButton.titleLabel?.font = UIFont(name: "YSDisplay-Medium", size: 20)
         yesButton.titleLabel?.font = UIFont(name: "YSDisplay-Medium", size: 20)
-    }
+        
+        // защита от одновременного нажатия двух кнопок
+        yesButton.isExclusiveTouch = true
+        noButton.isExclusiveTouch = true
+        }
     
-    @IBOutlet var questionTitleLabel: UILabel!
-    @IBOutlet var counterLabel: UILabel!
-    @IBOutlet var textLabel: UILabel!
-    @IBOutlet var imageView: UIImageView!
-    @IBOutlet var noButton: UIButton!
-    @IBOutlet var yesButton: UIButton!
- 
-    @IBAction func yesButtonClicked(_ sender: UIButton) {
+    @IBOutlet private var questionTitleLabel: UILabel!
+    @IBOutlet private var counterLabel: UILabel!
+    @IBOutlet private var textLabel: UILabel!
+    @IBOutlet private var imageView: UIImageView!
+    @IBOutlet private var noButton: UIButton!
+    @IBOutlet private var yesButton: UIButton!
+    
+    @IBAction private func yesButtonClicked(_ sender: UIButton) {
         let currentQuestion = questions[currentQuestionIndex]  // находим в массиве нужный нам моковый запрос
         let givenAnswer = true
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
         // передаем в метод покраски рамок значение, сравнивая правильный ответ и ответ пользователя
     }
     
-    @IBAction func noButtonClicked(_ sender: UIButton) {
+    @IBAction private func noButtonClicked(_ sender: UIButton) {
         let currentQuestion = questions[currentQuestionIndex]  // находим в массиве нужный нам моковый запрос
         let givenAnswer = false
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
         // передаем в метод покраски рамок значение, сравнивая правильный ответ и ответ пользователя
-        }
+    }
     
-    
+    //метод для блокировки кнопок
+    private func changeButtonState(isEnabled: Bool) {
+        yesButton.isEnabled = isEnabled
+        noButton.isEnabled = isEnabled
+    }
+
     // метод, содержащий логику перехода в один из сценариев, метод ничего не принимает и ничего не возвращает
     private func showNextQuestionOrResults() {
         if currentQuestionIndex == questions.count - 1 {
@@ -82,12 +112,14 @@ final class MovieQuizViewController: UIViewController {
         imageView.layer.masksToBounds = true // разрешаем нарисовать рамку
         imageView.layer.borderWidth = 8 // толщина рамки
         imageView.layer.cornerRadius = 20 // закругление углов
-        imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
         // красим рамку в зависимости от ответа
+        imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
+        changeButtonState(isEnabled: false) // отключил кнопки
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.showNextQuestionOrResults()
-        }
-        }
+            self.changeButtonState(isEnabled: true) // включил кнопки
+            }
+    }
     
     // метод конвертации, принимает моковый вопрос и возвращает вью модель для главного экрана
     private func convert(model: QuizQuestion) -> QuizStepViewModel {
@@ -104,26 +136,6 @@ final class MovieQuizViewController: UIViewController {
         textLabel.text = step.question
         counterLabel.text = step.questionNumber
         imageView.layer.borderWidth = 0 // чтобы рамка пропала при переходе на следующий вопрос
-        }
-
-    // вью модель для состояния "Вопрос показан"
-    private struct QuizStepViewModel {
-        let image: UIImage // картинка с афишей фильма с типом UIImage
-        let question: String // вопрос о рейтинге квиза
-        let questionNumber: String // строка с порядковым номером этого вопроса (ex. "1/10")
-    }
-    
-    private struct QuizQuestion {
-        // строка с названием фильма совпадает с названием картинки афиши фильма в Assets
-        let image: String   // строка с вопросом о рейтинге фильма
-        let text: String   // булевое значение (true, false), правильный ответ на вопрос
-        let correctAnswer: Bool
-    }
-    
-    private struct QuizResultsViewModel {
-        let title: String
-        let text: String
-        let buttonText: String
     }
     
     private var currentQuestionIndex = 0
@@ -132,7 +144,6 @@ final class MovieQuizViewController: UIViewController {
     
     private var correctAnswers = 0
     // переменная со счётчиком правильных ответов, начальное значение закономерно 0
-    
     
     private let questions: [QuizQuestion] = [
         QuizQuestion(
@@ -241,4 +252,4 @@ final class MovieQuizViewController: UIViewController {
  Настоящий рейтинг: 5,8
  Вопрос: Рейтинг этого фильма больше чем 6?
  Ответ: НЕТ
-*/
+ */
