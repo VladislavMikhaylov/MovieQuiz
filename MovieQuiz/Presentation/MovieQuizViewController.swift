@@ -1,43 +1,32 @@
-// started sprint_05
-
 import UIKit
 
-// вью модель для состояния "Вопрос показан"
-private struct QuizStepViewModel {
-    let image: UIImage // картинка с афишей фильма с типом UIImage
-    let question: String // вопрос о рейтинге квиза
-    let questionNumber: String // строка с порядковым номером этого вопроса (ex. "1/10")
-}
-
-private struct QuizQuestion {
-    // строка с названием фильма совпадает с названием картинки афиши фильма в Assets
-    let image: String   // строка с вопросом о рейтинге фильма
-    let text: String   // булевое значение (true, false), правильный ответ на вопрос
-    let correctAnswer: Bool
-}
-
-private struct QuizResultsViewModel {
-    let title: String
-    let text: String
-    let buttonText: String
-}
-
-final class MovieQuizViewController: UIViewController {
+final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, AlertPresenterDelegate {
+    
+    private let questionsAmount: Int = 10
+    private var questionFactory: QuestionFactoryProtocol = QuestionFactory()
+    private var currentQuestion: QuizQuestion?
+    private var alertPresenter : AlertPresenterProtocol?
+    
+    
+    // MARK: - viewDidLoad
     override func viewDidLoad() {
-        let currentQuestion = questions[currentQuestionIndex]
-        show(quiz: convert(model: currentQuestion))
-        imageView.layer.cornerRadius = 20 // закруглил углы в соответствии с замечанием
+        super.viewDidLoad()
+        
+        let questionFactory = QuestionFactory()
+        questionFactory.setup(delegate: self)
+        self.questionFactory = questionFactory
+        questionFactory.requestNextQuestion()
+        
+        imageView.layer.cornerRadius = 20
+        yesButton.isExclusiveTouch = true
+        noButton.isExclusiveTouch = true
         
         questionTitleLabel.font = UIFont(name: "YSDisplay-Medium", size: 20)
         counterLabel.font = UIFont(name: "YSDisplay-Medium", size: 20)
         textLabel.font = UIFont(name: "YSDisplay-Bold", size: 23)
         noButton.titleLabel?.font = UIFont(name: "YSDisplay-Medium", size: 20)
         yesButton.titleLabel?.font = UIFont(name: "YSDisplay-Medium", size: 20)
-        
-        // защита от одновременного нажатия двух кнопок
-        yesButton.isExclusiveTouch = true
-        noButton.isExclusiveTouch = true
-        }
+    }
     
     @IBOutlet private var questionTitleLabel: UILabel!
     @IBOutlet private var counterLabel: UILabel!
@@ -47,14 +36,18 @@ final class MovieQuizViewController: UIViewController {
     @IBOutlet private var yesButton: UIButton!
     
     @IBAction private func yesButtonClicked(_ sender: UIButton) {
-        let currentQuestion = questions[currentQuestionIndex]  // находим в массиве нужный нам моковый запрос
+        guard let currentQuestion = currentQuestion else {
+            return
+        }
         let givenAnswer = true
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
         // передаем в метод покраски рамок значение, сравнивая правильный ответ и ответ пользователя
     }
     
     @IBAction private func noButtonClicked(_ sender: UIButton) {
-        let currentQuestion = questions[currentQuestionIndex]  // находим в массиве нужный нам моковый запрос
+        guard let currentQuestion = currentQuestion else {
+            return
+        }
         let givenAnswer = false
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
         // передаем в метод покраски рамок значение, сравнивая правильный ответ и ответ пользователя
@@ -65,26 +58,42 @@ final class MovieQuizViewController: UIViewController {
         yesButton.isEnabled = isEnabled
         noButton.isEnabled = isEnabled
     }
-
-    // метод, содержащий логику перехода в один из сценариев, метод ничего не принимает и ничего не возвращает
-    private func showNextQuestionOrResults() {
-        if currentQuestionIndex == questions.count - 1 {
-            // сравниваем номер текущего вопроса из переменной currentQuestionIndexс размером массива моковых вопросов -1
-            // тк первый элемент массива имеет индекс 0.
-            // Если пользователь ответил на вопрос, то идем в сост. "Резултат квиза"
-            let text = "Ваш результат: \(correctAnswers)/10"
-            let viewModel = QuizResultsViewModel(
-                title: "Этот раунд окончен!",
-                text: text,
-                buttonText: "Сыграть ещё раз")
-            show(quiz: viewModel)
-        } else { // если вопрос не последний - идём в состояние "Вопр. показан" и увеличиваем индекс currentQuestionIndex на 1
-            currentQuestionIndex += 1
-            // идём в состояние "Вопрос показан"
-            let nextQuestion = questions[currentQuestionIndex]
-            let viewModel = convert(model: nextQuestion)
-            show(quiz: viewModel)
+    
+    // MARK: - QuestionFactoryDelegate
+    
+    func didReceiveNextQuestion(question: QuizQuestion?) {
+        guard let question = question else {
+            return
         }
+        currentQuestion = question
+        let viewModel = convert(model: question)
+        DispatchQueue.main.async { [weak self] in
+            self?.show(quiz: viewModel)
+        }
+    }
+    
+    private func showNextQuestionOrResults() {
+        if currentQuestionIndex == questionsAmount - 1 {
+            let text = correctAnswers == questionsAmount ?
+            "Поздравляем, Вы ответили на 10 из 10!":
+            "Вы ответили на \(correctAnswers) из 10, попробуйте еще раз!"
+            
+            let alertModel = AlertModel(title: "Этот раунд окончен!",
+                                        message: text,
+                                        buttonText: "Сыграть ещё раз") { [weak self] in
+                guard let self = self else { return }
+                self.currentQuestionIndex = 0
+                self.correctAnswers = 0
+                self.questionFactory.requestNextQuestion()
+            }
+            let alertPresenter = AlertPresenter()
+            alertPresenter.delegate = self
+            self.alertPresenter = alertPresenter
+            alertPresenter.show(quiz: alertModel)
+        } else {
+            currentQuestionIndex += 1
+            questionFactory.requestNextQuestion()
+            }
     }
     
     // метод для показа результатов раунда квиза, принимает вью модель QuizResultsViewModel и ничего не возвращает
@@ -97,11 +106,8 @@ final class MovieQuizViewController: UIViewController {
         let action = UIAlertAction(title: result.buttonText, style: .default) { _ in
             self.currentQuestionIndex = 0
             self.correctAnswers = 0
-            
-            let firstQuestion = self.questions[self.currentQuestionIndex]
-            let viewModel = self.convert(model: firstQuestion)
-            self.show(quiz: viewModel)
-        }
+           }
+        self.questionFactory.self.requestNextQuestion()
         alert.addAction(action)
         self.present(alert, animated: true, completion: nil)
     }
@@ -120,7 +126,7 @@ final class MovieQuizViewController: UIViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.showNextQuestionOrResults()
             self.changeButtonState(isEnabled: true) // включил кнопки
-            }
+        }
     }
     
     // метод конвертации, принимает моковый вопрос и возвращает вью модель для главного экрана
@@ -128,7 +134,7 @@ final class MovieQuizViewController: UIViewController {
         let questionStep = QuizStepViewModel(
             image: UIImage(named: model.image) ?? UIImage(),
             question: model.text,
-            questionNumber: "\(currentQuestionIndex + 1)/\(questions.count)")
+            questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
         return questionStep
     }
     
@@ -146,112 +152,4 @@ final class MovieQuizViewController: UIViewController {
     
     private var correctAnswers = 0
     // переменная со счётчиком правильных ответов, начальное значение закономерно 0
-    
-    private let questions: [QuizQuestion] = [
-        QuizQuestion(
-            image: "The Godfather",
-            text: "Рейтинг этого фильма больше чем 6?",
-            correctAnswer: true),
-        QuizQuestion(
-            image: "The Dark Knight",
-            text: "Рейтинг этого фильма больше чем 6?",
-            correctAnswer: true),
-        QuizQuestion(
-            image: "Kill Bill",
-            text: "Рейтинг этого фильма больше чем 6?",
-            correctAnswer: true),
-        QuizQuestion(
-            image: "The Avengers",
-            text: "Рейтинг этого фильма больше чем 6?",
-            correctAnswer: true),
-        QuizQuestion(
-            image: "Deadpool",
-            text: "Рейтинг этого фильма больше чем 6?",
-            correctAnswer: true),
-        QuizQuestion(
-            image: "The Green Knight",
-            text: "Рейтинг этого фильма больше чем 6?",
-            correctAnswer: true),
-        QuizQuestion(
-            image: "Old",
-            text: "Рейтинг этого фильма больше чем 6?",
-            correctAnswer: false),
-        QuizQuestion(
-            image: "The Ice Age Adventures of Buck Wild",
-            text: "Рейтинг этого фильма больше чем 6?",
-            correctAnswer: false),
-        QuizQuestion(
-            image: "Tesla",
-            text: "Рейтинг этого фильма больше чем 6?",
-            correctAnswer: false),
-        QuizQuestion(
-            image: "Vivarium",
-            text: "Рейтинг этого фильма больше чем 6?",
-            correctAnswer: false)
-    ]
-    
 }
-
-/*
- Mock-данные
- 
- 
- Картинка: The Godfather
- Настоящий рейтинг: 9,2
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: ДА
- 
- 
- Картинка: The Dark Knight
- Настоящий рейтинг: 9
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: ДА
- 
- 
- Картинка: Kill Bill
- Настоящий рейтинг: 8,1
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: ДА
- 
- 
- Картинка: The Avengers
- Настоящий рейтинг: 8
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: ДА
- 
- 
- Картинка: Deadpool
- Настоящий рейтинг: 8
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: ДА
- 
- 
- Картинка: The Green Knight
- Настоящий рейтинг: 6,6
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: ДА
- 
- 
- Картинка: Old
- Настоящий рейтинг: 5,8
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: НЕТ
- 
- 
- Картинка: The Ice Age Adventures of Buck Wild
- Настоящий рейтинг: 4,3
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: НЕТ
- 
- 
- Картинка: Tesla
- Настоящий рейтинг: 5,1
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: НЕТ
- 
- 
- Картинка: Vivarium
- Настоящий рейтинг: 5,8
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: НЕТ
- */
