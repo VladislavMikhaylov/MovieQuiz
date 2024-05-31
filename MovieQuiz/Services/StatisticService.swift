@@ -22,14 +22,14 @@ final class StatisticService: StatisticServiceProtocol {
     
     var bestGame: GameResult {
         get {
-            let correct = storage.integer(forKey: Keys.correct.rawValue)
-            let total = storage.integer(forKey: Keys.total.rawValue)
-            let date = storage.object(forKey: Keys.date.rawValue)as? Date ?? Date()
-            return GameResult (correct: correct, total: total, date: date)
+            let correct = storage.integer(forKey: Keys.bestGameCorrect.rawValue)
+            let total = storage.integer(forKey: Keys.bestGameTotal.rawValue)
+            let date = storage.object(forKey: Keys.date.rawValue) as? Date ?? Date()
+            return GameResult(correct: correct, total: total, date: date)
         }
         set {
-            storage.set(newValue.correct, forKey: Keys.correct.rawValue)
-            storage.set(newValue.total, forKey: Keys.total.rawValue)
+            storage.set(newValue.correct, forKey: Keys.bestGameCorrect.rawValue)
+            storage.set(newValue.total, forKey: Keys.bestGameTotal.rawValue)
             storage.set(newValue.date, forKey: Keys.date.rawValue)
         }
     }
@@ -37,9 +37,14 @@ final class StatisticService: StatisticServiceProtocol {
     func store(correct count: Int, total amount: Int) {
         gamesCount += 1
         
+        // обновляем общее количество правильных вопросов и ответов
+        let totalCorrect = storage.integer(forKey: Keys.correct.rawValue) + count
+        let totalQuestions = storage.integer(forKey: Keys.total.rawValue) + amount
+        storage.set(totalCorrect, forKey: Keys.correct.rawValue)
+        storage.set(totalQuestions, forKey: Keys.total.rawValue)
+        
+        // обновляем лучший результат, если текущий лучше
         let previousBestGame = self.bestGame
-        let correct = storage.integer(forKey: Keys.correct.rawValue) + count
-        let total = storage.integer(forKey: Keys.total.rawValue) + amount
         let newResult = GameResult(correct: count, total: amount, date: Date())
         if newResult.isBetterThan(previousBestGame) {
             self.bestGame = newResult
@@ -48,9 +53,10 @@ final class StatisticService: StatisticServiceProtocol {
     
     private enum Keys: String {
         case correct
-        case bestGame
+        case total
         case gamesCount
         case date
-        case total
+        case bestGameCorrect
+        case bestGameTotal
     }
 }
