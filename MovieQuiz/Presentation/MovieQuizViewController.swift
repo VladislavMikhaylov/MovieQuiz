@@ -131,7 +131,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         // красим рамку в зависимости от ответа
         imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
         changeButtonState(isEnabled: false) // отключил кнопки
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.showNextQuestionOrResults()
             self.changeButtonState(isEnabled: true) // включил кнопки
         }
