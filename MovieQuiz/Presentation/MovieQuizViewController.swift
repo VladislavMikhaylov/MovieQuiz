@@ -6,7 +6,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     private var questionFactory: QuestionFactoryProtocol = QuestionFactory()
     private var currentQuestion: QuizQuestion?
     private var alertPresenter : AlertPresenterProtocol?
-    private var statisticService: StatisticService  = StatisticService()
+    private var statisticService: StatisticService  = StatisticServiceImplementation()
     
     
     // MARK: - viewDidLoad
@@ -55,7 +55,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     }
     
     //метод для блокировки кнопок
-    private func changeButtonState(isEnabled: Bool) {
+    private func changeStateButton(isEnabled: Bool) {
         yesButton.isEnabled = isEnabled
         noButton.isEnabled = isEnabled
     }
@@ -85,7 +85,12 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             let recordTime = statisticService.bestGame.date.dateTimeString
             let accuracy = String(format: "%.2f", statisticService.totalAccuracy)
             
-            let text = "Ваш результат: \(correctAnswers)/\(questionsAmount)\nКоличество сыгранных квизов: \(totalCount)\nРекорд: \(currentRecord) (\(recordTime))\nСредняя точность: \(accuracy)%"
+            let text = """
+            Ваш результат: \(correctAnswers)/\(questionsAmount)
+            Количество сыгранных квизов: \(totalCount)
+            Рекорд: \(currentRecord) (\(recordTime))
+            Средняя точность: \(accuracy)%
+            """
             
             let alertModel = AlertModel(title: "Этот раунд окончен!", message: text, buttonText: "Сыграть ещё раз") { [weak self] in
                 guard let self = self else { return }
@@ -130,10 +135,10 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         imageView.layer.cornerRadius = 20 // закругление углов
         // красим рамку в зависимости от ответа
         imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
-        changeButtonState(isEnabled: false) // отключил кнопки
+        changeStateButton(isEnabled: false) // отключил кнопки
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.showNextQuestionOrResults()
-            self.changeButtonState(isEnabled: true) // включил кнопки
+            self.changeStateButton(isEnabled: true) // включил кнопки
         }
     }
     

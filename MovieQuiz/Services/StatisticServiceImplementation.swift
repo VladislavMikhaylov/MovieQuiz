@@ -1,6 +1,6 @@
 import UIKit
 
-final class StatisticService: StatisticServiceProtocol {
+final class StatisticServiceImplementation: StatisticService {
     private let storage: UserDefaults = .standard
     
     var totalAccuracy: Double {
