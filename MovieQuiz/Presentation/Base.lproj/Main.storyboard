@@ -3,7 +3,7 @@
     <device id="retina6_1" orientation="portrait" appearance="dark"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22684"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22685"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -98,17 +98,24 @@
                                     </stackView>
                                 </subviews>
                             </stackView>
+                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="2nI-bf-DlS" userLabel="Activity Indicator">
+                                <rect key="frame" x="197" y="438" width="20" height="20"/>
+                                <color key="color" name="YP Black"/>
+                            </activityIndicatorView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" name="YP Black"/>
                         <constraints>
+                            <constraint firstItem="2nI-bf-DlS" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="8KL-YM-kb6"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="Zyg-KH-uou" secondAttribute="bottom" id="EVj-q8-Baz"/>
                             <constraint firstItem="Zyg-KH-uou" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="20" id="SwR-c3-1gL"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="Zyg-KH-uou" secondAttribute="trailing" constant="20" id="rug-TF-Twt"/>
+                            <constraint firstItem="2nI-bf-DlS" firstAttribute="centerY" secondItem="8bC-Xf-vdC" secondAttribute="centerY" id="t9K-xw-sPm"/>
                             <constraint firstItem="Zyg-KH-uou" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="10" id="u3y-7a-WL3"/>
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="activityIndicator" destination="2nI-bf-DlS" id="bwx-C2-jhy"/>
                         <outlet property="counterLabel" destination="4FT-fm-mJv" id="LST-V6-HBf"/>
                         <outlet property="imageView" destination="4wF-Fe-Q3W" id="FoX-Gv-xJh"/>
                         <outlet property="noButton" destination="aeW-LP-zeg" id="eBY-9E-eO9"/>
