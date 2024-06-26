@@ -1,4 +1,4 @@
-import UIKit
+import Foundation
 
 final class QuestionFactory: QuestionFactoryProtocol {
     private let moviesLoader: MoviesLoading

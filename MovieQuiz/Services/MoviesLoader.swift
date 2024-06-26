@@ -7,7 +7,12 @@ protocol MoviesLoading {
 
 // реализация протокола
 struct MoviesLoader: MoviesLoading {
-    private let networkClient = NetworkClient() // чтобы создавать запросы к API IMDB
+    private let networkClient: NetworkRouting // чтобы создавать запросы к API IMDB
+    
+    init(networkClient: NetworkRouting = NetworkClient()) {
+        self.networkClient = networkClient
+    }
+    
     private var mostPopularMoviesUrl: URL {
         // Если мы не смогли преобразовать строку в URL, то приложение упадёт с ошибкой
         guard let url = URL(string: "https://tv-api.com/en/API/Top250Movies/k_zcuw1ytf") else {
