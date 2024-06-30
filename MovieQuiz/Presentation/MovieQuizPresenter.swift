@@ -19,11 +19,12 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         questionFactory?.loadData()
     }
     
-    func convert(model: QuizQuestion) -> QuizStepViewModel {
+    private func convert(model: QuizQuestion) -> QuizStepViewModel {
         return QuizStepViewModel(
             image: UIImage(data: model.image) ?? UIImage(),
             question: model.text,
-            questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
+            questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)"
+        )
     }
     
     // MARK: - Buttons
@@ -37,7 +38,7 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     
     // MARK: - Questions
     
-    func isLastQuestion() -> Bool {
+    private func isLastQuestion() -> Bool {
         currentQuestionIndex == questionsAmount - 1
     }
     
@@ -45,7 +46,7 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         currentQuestionIndex = 0
     }
     
-    func switchToNextQuestion() {
+    private func switchToNextQuestion() {
         currentQuestionIndex += 1
     }
     
@@ -54,7 +55,7 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         questionFactory?.requestNextQuestion()
     }
     
-    func didAnswer(isYes: Bool) {
+    private func didAnswer(isYes: Bool) {
         guard let currentQuestion = currentQuestion else { return }
         
         let givenAnswer = isYes
@@ -134,7 +135,7 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         requestNextQuestion()
     }
     
-    func showNextQuestionOrResults() {
+    private func showNextQuestionOrResults() {
         if isLastQuestion() {
             showResults()
         } else {
